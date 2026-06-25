@@ -617,13 +617,13 @@
     if(n1!==n2){err.textContent="Le due password non coincidono";err.classList.remove("hidden");return;}
     localStorage.setItem("nc_pwd",n1); ok.classList.remove("hidden");
     $("pwd-old").value=""; $("pwd-new").value=""; $("pwd-new2").value="";
-    setTimeout(()=>{ $("sheet-pwd").classList.add("hidden"); ok.classList.add("hidden"); },1500);
+    setTimeout(()=>{ $("sheet-pwd").style.display="none"; ok.classList.add("hidden"); },1500);
   });
-  document.getElementById("closePwd").addEventListener("click",()=>$("sheet-pwd").classList.add("hidden"));
+  document.getElementById("closePwd").addEventListener("click",()=>{ $("sheet-pwd").style.display="none"; });
   document.getElementById("btnCambiaPwd").addEventListener("click",()=>{
     $("pwd-old").value=""; $("pwd-new").value=""; $("pwd-new2").value="";
     $("pwd-err").classList.add("hidden"); $("pwd-ok").classList.add("hidden");
-    $("sheet-pwd").classList.remove("hidden");
+    $("sheet-pwd").style.display="flex";
   });
 
   // ══════════════════════════════════════════
