@@ -328,6 +328,40 @@
   .card-head{padding:calc(15px * var(--density)) 18px;}
   .fields{padding:calc(16px * var(--density)) 18px calc(18px * var(--density));}
 
+
+  /* ============ VISTA REPORT ============ */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .kpi .lbl{font-size:.85rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
+  .kpi .val{font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums;}
+  .kpi.tot .val{color:var(--tot);}
+  .kpi.fis .val{color:var(--fis);}
+  .kpi.dif .val{color:var(--dif);}
+  .kpi.neu .val{color:var(--ink);}
+  .report-section{background:var(--card);border:2px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:16px;}
+  .report-section h3{margin:0 0 14px;font-size:1.1rem;font-weight:700;color:var(--ink);}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-row .bar-lbl{width:68px;font-size:.9rem;font-weight:600;flex-shrink:0;color:var(--ink);}
+  .bar-wrap{flex:1;background:var(--line);border-radius:6px;height:28px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;
+    font-size:.82rem;font-weight:700;color:#fff;white-space:nowrap;transition:width .5s ease;}
+  .bar-row .bar-val{width:68px;text-align:right;font-size:.88rem;font-weight:700;
+    font-variant-numeric:tabular-nums;flex-shrink:0;}
+  .bar-row.vuoto .bar-lbl{color:var(--muted);}
+  .bar-row.vuoto .bar-fill{background:var(--line);}
+  .bar-row.vuoto .bar-val{color:var(--muted);}
+  .mese-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  .mese-table th{text-align:right;padding:6px 8px;color:var(--muted);font-weight:700;
+    font-size:.78rem;text-transform:uppercase;border-bottom:2px solid var(--line);}
+  .mese-table th:first-child{text-align:left;}
+  .mese-table td{padding:8px 8px;border-bottom:1px solid var(--line);
+    text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
+  .mese-table td:first-child{text-align:left;font-weight:700;}
+  .mese-table tr.vuoto td{color:var(--muted);font-weight:400;}
+  .mese-table tfoot td{font-weight:800;border-top:2px solid var(--ink);
+    border-bottom:none;padding-top:10px;}
+
 </style>
 </head>
 <body>
@@ -384,6 +418,7 @@
         <button class="tab active" data-view="oggi">Oggi</button>
         <button class="tab" data-view="mese">Mese</button>
         <button class="tab" data-view="tabella">Tabella</button>
+        <button class="tab" data-view="report">Report</button>
       </div>
       <div class="zoom">
         <button class="zbtn" data-s="80">A</button>
@@ -568,6 +603,7 @@
     ['oggi','mese','tabella'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
     if(v==='mese') caricaEMostraMese(meseCorrente);
     if(v==='tabella') caricaEMostraTabella(meseCorrente);
+    if(v==='report') caricaReport();
   }));
 
   // ══════════════════════════════════════════
@@ -874,7 +910,100 @@
     s.style.display=show?"block":"none";
   }
 
+
+  // ══════════════════════════════════════════
+  //  VISTA REPORT
+  // ══════════════════════════════════════════
+  async function caricaReport(){
+    const container = $("report-content");
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 0;">Caricamento dati...</div>';
+    
+    try {
+      const data = await chiamaScript({action:"reportAnno"});
+      if(!data.ok) throw new Error(data.errore||"Errore");
+      renderReport(data);
+    } catch(e) {
+      container.innerHTML = `<div style="text-align:center;color:var(--danger);padding:40px 0;">Errore: ${e.message}</div>`;
+    }
+  }
+
+  function renderReport(data){
+    const mesi = data.mesi || [];
+    const mesiPieni = mesi.filter(m=>!m.vuoto);
+    const maxInc = Math.max(...mesiPieni.map(m=>m.incassi||0), 1);
+    
+    // KPI
+    const kpi = `
+      <div class="kpi-grid">
+        <div class="kpi tot"><div class="lbl">Incassi totali</div><div class="val">${eur(data.totaleIncassi||0)}</div></div>
+        <div class="kpi neu"><div class="lbl">Spese totali</div><div class="val">${eur(data.totaleSpese||0)}</div></div>
+        <div class="kpi dif"><div class="lbl">Saldo anno</div><div class="val">${eur(data.saldoAnno||0)}</div></div>
+        <div class="kpi fis"><div class="lbl">Media mensile</div><div class="val">${eur(data.mediaIncassi||0)}</div></div>
+      </div>
+    `;
+
+    // Grafico a barre incassi
+    const barre = mesi.map(m => {
+      const pct = m.vuoto ? 0 : Math.round((m.incassi/maxInc)*100);
+      const cls = m.vuoto ? 'bar-row vuoto' : 'bar-row';
+      const fill = m.vuoto ? '' : `€ ${Math.round(m.incassi).toLocaleString("it-IT")}`;
+      const colore = m.vuoto ? 'var(--line)' : 'var(--tot)';
+      return `<div class="${cls}">
+        <div class="bar-lbl">${m.mese.substring(0,3)}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${colore};">${pct>20?fill:''}</div></div>
+        <div class="bar-val">${m.vuoto ? '—' : '€ '+Math.round(m.incassi).toLocaleString("it-IT")}</div>
+      </div>`;
+    }).join('');
+
+    const graficoBarre = `
+      <div class="report-section">
+        <h3>📊 Incassi per mese</h3>
+        ${barre}
+      </div>
+    `;
+
+    // Tabella riepilogo mensile
+    const righe = mesi.map(m => {
+      if(m.vuoto) return `<tr class="vuoto"><td>${m.mese}</td><td>—</td><td>—</td><td>—</td></tr>`;
+      return `<tr>
+        <td>${m.mese}</td>
+        <td>${Math.round(m.incassi).toLocaleString("it-IT")}</td>
+        <td>${Math.round(m.spese).toLocaleString("it-IT")}</td>
+        <td style="color:var(--tot);font-weight:800;">${Math.round(m.saldo).toLocaleString("it-IT")}</td>
+      </tr>`;
+    }).join('');
+
+    const tabella = `
+      <div class="report-section">
+        <h3>📋 Riepilogo mensile</h3>
+        <table class="mese-table">
+          <thead><tr><th>Mese</th><th>Incassi</th><th>Spese</th><th>Saldo</th></tr></thead>
+          <tbody>${righe}</tbody>
+          <tfoot><tr>
+            <td>TOTALE</td>
+            <td>${Math.round(data.totaleIncassi||0).toLocaleString("it-IT")}</td>
+            <td>${Math.round(data.totaleSpese||0).toLocaleString("it-IT")}</td>
+            <td style="color:var(--tot);">${Math.round(data.saldoAnno||0).toLocaleString("it-IT")}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    `;
+
+    $("report-content").innerHTML = kpi + graficoBarre + tabella;
+  }
+
 </script>
+
+  <!-- ====================== VISTA REPORT ====================== -->
+  <div id="view-report" class="hidden">
+    <div class="month-head">
+      <div class="mname" style="flex:1;text-align:center;">Report 2026</div>
+    </div>
+    <div id="report-content" style="padding:16px;">
+      <div style="text-align:center;color:var(--muted);padding:40px 0;">Caricamento...</div>
+    </div>
+  </div>
+
 </body>
 </html>  
 
