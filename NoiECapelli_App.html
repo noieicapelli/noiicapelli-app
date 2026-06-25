@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Noi e i Capelli — Incassi</title>
+<style>
+  :root{
+    --density:1;
+    --ink:#1a1d1a; --paper:#f6f4ef; --card:#ffffff; --line:#e3ded4; --muted:#8a857a;
+    --tot:#2f6f4f; --tot-soft:#e8f1ec;
+    --fis:#345b8c; --fis-soft:#e7eef6;
+    --dif:#9a6b1f; --dif-soft:#f5ede0;
+    --danger:#b23b3b;
+    --scale:135%;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  html{font-size:var(--scale);}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding-bottom:150px;font-size:1.19rem;
+  }
+  
+  
+  
+  .top h1{margin:0;font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+  .scissors{font-size:1.4rem;opacity:.85;}
+  
+  
+  
+    
+  
+  /* ---- tab switch ---- */
+  .tabs{display:flex;gap:6px;margin-top:16px;background:#000;padding:5px;border-radius:13px;}
+  
+  
+  /* ============ VISTA OGGI ============ */
+  .datebar{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+    border-bottom:2px solid var(--line);padding:16px 18px;position:sticky;top:60px;z-index:19;}
+  .datebar label{font-size:1.12rem;color:#403c34;font-weight:600;}
+  .datebar input{border:2px solid var(--line);border-radius:12px;padding:14px 16px;
+    font-size:1.25rem;background:var(--paper);color:var(--ink);font-family:inherit;font-weight:600;}
+  .wrap{padding:18px;display:flex;flex-direction:column;gap:18px;}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 2px 4px rgba(0,0,0,.05);}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;
+    border-bottom:2px solid var(--line);}
+  .card-head .name{display:flex;align-items:center;gap:11px;font-weight:700;font-size:1.3rem;}
+  .dot{width:16px;height:16px;border-radius:50%;}
+  .badge{font-size:.92rem;font-weight:700;padding:6px 13px;border-radius:20px;}
+  .tot .card-head{background:var(--tot-soft);} .fis .card-head{background:var(--fis-soft);} .dif .card-head{background:var(--dif-soft);}
+  .tot .dot{background:var(--tot);} .tot .badge{background:#fff;color:var(--tot);} .tot .name{color:var(--tot);}
+  .fis .dot{background:var(--fis);} .fis .badge{background:#fff;color:var(--fis);} .fis .name{color:var(--fis);}
+  .dif .dot{background:var(--dif);} .dif .badge{background:#fff;color:var(--dif);} .dif .name{color:var(--dif);}
+  .fields{padding:16px 18px 18px;display:flex;flex-direction:column;gap:15px;}
+  .row{display:flex;align-items:center;gap:14px;}
+  .row label{flex:1;font-size:1.12rem;color:#2a2722;font-weight:600;line-height:1.25;}
+  .row .hint{display:block;font-size:.88rem;color:var(--muted);margin-top:2px;font-weight:500;}
+  .opt{font-size:.85rem;color:var(--muted);font-weight:600;margin-left:4px;}
+  .euro{position:relative;flex:0 0 155px;}
+  .euro span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);
+    font-size:1.25rem;pointer-events:none;font-weight:600;}
+  .euro input{width:100%;border:2px solid var(--line);border-radius:13px;
+    padding:16px 14px 16px 32px;font-size:1.45rem;text-align:right;background:var(--paper);
+    color:var(--ink);font-family:inherit;font-weight:700;}
+  .euro input:focus{outline:3px solid var(--tot);outline-offset:1px;border-color:var(--tot);background:#fff;}
+  .fis .euro input:focus{outline-color:var(--fis);border-color:var(--fis);}
+  .dif .euro input:focus{outline-color:var(--dif);border-color:var(--dif);}
+  .saldo{display:flex;align-items:center;justify-content:space-between;margin-top:5px;
+    padding:15px 16px;border-radius:13px;font-weight:700;border:2px solid transparent;}
+  .tot .saldo{background:var(--tot-soft);color:var(--tot);border-color:var(--tot);}
+  .fis .saldo{background:var(--fis-soft);color:var(--fis);border-color:var(--fis);}
+  .dif .saldo{background:var(--dif-soft);color:var(--dif);border-color:var(--dif);}
+  .saldo .lbl{font-size:1.05rem;font-weight:700;} .saldo .val{font-size:1.55rem;font-variant-numeric:tabular-nums;}
+  .check{margin:4px 18px 0;padding:16px 18px;border-radius:13px;font-size:1.12rem;
+    display:flex;align-items:center;gap:10px;font-weight:700;border:2px solid transparent;}
+  .check.ok{background:var(--tot-soft);color:var(--tot);border-color:var(--tot);}
+  .check.warn{background:#fbecea;color:var(--danger);border-color:var(--danger);}
+  /* ============ VISTA MESE ============ */
+  .month-head{background:var(--card);border-bottom:2px solid var(--line);padding:14px 18px;
+    display:flex;align-items:center;justify-content:space-between;}
+  .month-head .mname{font-size:1.25rem;font-weight:700;}
+  .month-head .nav{display:flex;gap:8px;}
+  .month-head .nav button{border:2px solid var(--line);background:var(--paper);border-radius:10px;
+    width:44px;height:44px;font-size:1.2rem;font-family:inherit;font-weight:700;color:var(--ink);}
+  /* tabella compatta */
+  .mtable{padding:12px 14px;}
+  .mt-headrow{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:8px;padding:8px 10px;
+    font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .mt-headrow .c{text-align:right;}
+  .mrow{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:8px;align-items:center;
+    background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:13px 10px;
+    margin-bottom:7px;font-weight:600;}
+  .mrow:active{background:var(--tot-soft);}
+  .mrow .day{font-size:1.05rem;font-weight:700;}
+  .mrow .day small{display:block;font-size:.72rem;color:var(--muted);font-weight:600;}
+  .mrow .c{text-align:right;font-variant-numeric:tabular-nums;font-size:1.02rem;}
+  .mrow .c.t{color:var(--tot);} .mrow .c.f{color:var(--fis);} .mrow .c.d{color:var(--dif);}
+  .mrow.empty{opacity:.45;font-weight:500;}
+  .mrow.empty .c{color:var(--muted);}
+  .mt-tot{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:8px;padding:15px 10px;margin-top:6px;
+    background:var(--ink);color:#fff;border-radius:12px;font-weight:700;}
+  .mt-tot .c{text-align:right;font-variant-numeric:tabular-nums;font-size:1.05rem;}
+  .mt-tot .day{font-size:.95rem;}
+  .tap-hint{text-align:center;color:var(--muted);font-size:.9rem;margin:10px 0 4px;font-weight:500;}
+  /* ============ VISTA TABELLA (Excel-like) ============ */
+  .tab-scroll-hint{text-align:center;color:var(--muted);font-size:.85rem;margin:8px 0;font-weight:600;}
+  .xls-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 12px 16px;}
+  table.xls{border-collapse:separate;border-spacing:0;font-size:.92rem;width:max-content;}
+  table.xls th,table.xls td{padding:9px 11px;text-align:right;white-space:nowrap;
+    font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line);border-right:1px solid var(--line);}
+  /* intestazioni gruppo */
+  table.xls thead .grp th{text-align:center;font-size:.9rem;font-weight:800;color:#fff;
+    border-bottom:2px solid rgba(0,0,0,.15);padding:9px;letter-spacing:.3px;}
+  table.xls thead .sub th{font-size:.78rem;font-weight:700;color:#fff;
+    text-transform:uppercase;letter-spacing:.2px;padding:7px 11px;}
+  .g-tot{background:var(--tot);} .g-fis{background:var(--fis);} .g-dif{background:var(--dif);}
+  .sub .bld{border-left:2px solid rgba(255,255,255,.4);}
+  /* colonna giorno fissa a sinistra */
+  .sticky-col{position:sticky;left:0;z-index:5;}
+  thead .corner{background:var(--ink);color:#fff;font-weight:800;text-align:center;
+    border-right:2px solid rgba(0,0,0,.2);vertical-align:middle;}
+  tbody .sticky-col{background:var(--card);font-weight:800;text-align:left;
+    border-right:2px solid var(--line);}
+  tbody .sticky-col small{display:block;font-size:.68rem;color:var(--muted);font-weight:600;}
+  /* celle corpo */
+  tbody td{background:var(--card);color:#2a2722;font-weight:600;}
+  tbody td.zero{color:#cfc9bd;font-weight:500;}
+  /* saldi in evidenza (colonna grassetto di ogni gruppo) */
+  tbody td.s-tot{background:var(--tot-soft);color:var(--tot);font-weight:800;border-left:2px solid var(--tot);}
+  tbody td.s-fis{background:var(--fis-soft);color:var(--fis);font-weight:800;border-left:2px solid var(--fis);}
+  tbody td.s-dif{background:var(--dif-soft);color:var(--dif);font-weight:800;border-left:2px solid var(--dif);}
+  tbody tr:active td{filter:brightness(.96);}
+  tbody tr.empty td{background:#faf8f3;color:#cfc9bd;font-weight:500;}
+  tbody tr.empty .sticky-col{color:var(--muted);}
+  /* riga totali */
+  tfoot td{background:var(--ink);color:#fff;font-weight:800;border-bottom:none;
+    border-right:1px solid rgba(255,255,255,.12);}
+  tfoot td.sticky-col{background:#000;text-align:left;position:sticky;left:0;z-index:5;}
+  /* ============ DETTAGLIO (modal) ============ */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:none;
+    align-items:flex-end;}
+  .sheet.open{display:flex;}
+  .sheet-card{background:var(--paper);width:100%;border-radius:22px 22px 0 0;padding:8px 0 24px;
+    max-height:88vh;overflow-y:auto;}
+  .sheet-grab{width:44px;height:5px;background:var(--line);border-radius:3px;margin:8px auto 4px;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 14px;
+    border-bottom:2px solid var(--line);}
+  .sheet-head .t{font-size:1.3rem;font-weight:700;}
+  .sheet-close{border:none;background:var(--ink);color:#fff;border-radius:10px;padding:10px 16px;
+    font-family:inherit;font-weight:700;font-size:1rem;}
+  .det-sec{padding:14px 20px;border-bottom:1.5px solid var(--line);}
+  .det-sec h4{margin:0 0 10px;font-size:1.05rem;display:flex;align-items:center;gap:8px;}
+  .det-sec.t h4{color:var(--tot);} .det-sec.f h4{color:var(--fis);} .det-sec.d h4{color:var(--dif);}
+  .det-line{display:flex;justify-content:space-between;padding:7px 0;font-size:1.05rem;}
+  .det-line .k{color:#403c34;} .det-line .v{font-weight:700;font-variant-numeric:tabular-nums;}
+  .det-line.saldo-line{border-top:2px solid var(--line);margin-top:6px;padding-top:11px;}
+  .det-edit{margin:16px 20px 0;}
+  .det-edit button{width:100%;border:2px solid var(--ink);background:transparent;color:var(--ink);
+    border-radius:14px;padding:16px;font-family:inherit;font-weight:700;font-size:1.15rem;}
+  /* footer */
+  .save{position:fixed;left:0;right:0;bottom:0;padding:16px 18px;
+    background:linear-gradient(transparent,var(--paper) 22%);}
+  .save button{width:100%;border:none;border-radius:16px;padding:21px;background:var(--ink);
+    color:#fff;font-size:1.35rem;font-weight:700;font-family:inherit;}
+  .save button:active{transform:scale(.99);}
+  .mockup-note{margin:0 18px 10px;font-size:.85rem;color:var(--muted);text-align:center;font-weight:500;}
+  .hidden{display:none;}
+
+  /* ============ LOGIN ============ */
+  #screen-login{
+    position:fixed;inset:0;background:var(--paper);z-index:100;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .login-wrap{
+    width:100%;max-width:360px;padding:32px 24px;
+    display:flex;flex-direction:column;align-items:center;gap:24px;
+  }
+  .login-logo{width:160px;height:auto;border-radius:12px;}
+  .login-title{margin:0;font-size:1.5rem;font-weight:700;color:var(--ink);}
+  .login-card{
+    width:100%;background:var(--card);border:2px solid var(--line);
+    border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;
+  }
+  .login-lbl{font-size:1rem;font-weight:700;color:#403c34;display:block;margin-bottom:6px;}
+  .login-field{position:relative;}
+  .login-input{
+    width:100%;border:2px solid var(--line);border-radius:13px;
+    padding:16px 50px 16px 16px;font-size:1.3rem;font-family:inherit;
+    background:var(--paper);color:var(--ink);font-weight:600;
+    box-sizing:border-box;
+  }
+  .login-input:focus{outline:3px solid var(--ink);border-color:var(--ink);background:#fff;}
+  .login-eye{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    border:none;background:transparent;font-size:1.3rem;padding:6px;
+  }
+  .login-btn{
+    width:100%;border:none;border-radius:13px;padding:18px;
+    background:var(--ink);color:#fff;font-size:1.3rem;font-weight:700;
+    font-family:inherit;
+  }
+  .login-btn:active{transform:scale(.99);}
+  .login-err{color:var(--danger);font-weight:700;font-size:1rem;text-align:center;margin:0;}
+  .login-ok{color:var(--tot);font-weight:700;font-size:1rem;text-align:center;margin:0;}
+
+
+  
+  .fab-pwd:active{background:rgba(26,29,26,.30);}
+
+
+  
+  
+
+
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /* chiavetta: spigolo alto destra, dentro il padding di 40px */
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  .top{background:var(--ink);display:flex;flex-direction:column;position:sticky;top:0;z-index:20;}
+  /* RIGA 1: logo + titolo */
+  
+  
+  
+  /* RIGA 2: tabs + zoom + chiave */
+  .top-r2{display:flex;align-items:center;padding:12px 8px;gap:6px;}
+  .top-tabs{
+    display:flex;flex:1;align-items:center;gap:4px;
+  }
+  .tab{
+    flex:1;text-align:center;padding:8px 6px;border-radius:9px;
+    font-weight:700;font-size:1rem;color:#b9b4a8;
+    background:transparent;border:none;font-family:inherit;white-space:nowrap;
+  }
+  .tab.active{background:#fff;color:var(--ink);}
+  .zoom{
+    display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0;
+  }
+  .zbtn{
+    border:2px solid #5a5a54;background:transparent;color:#fff;
+    border-radius:8px;padding:6px 10px;font-family:inherit;
+    font-weight:800;font-size:15px;min-width:40px;text-align:center;
+  }
+  .zbtn.active{background:#fff;color:var(--ink);border-color:#fff;}
+  
+
+.key-pwd{border:none;background:transparent;color:rgba(255,255,255,.35);font-size:.85rem;padding:6px 4px;flex-shrink:0;}
+
+  /* ---- DENSITY SCALING ---- */
+  .fields{gap:calc(15px * var(--density));}
+  .euro input{padding:calc(16px * var(--density)) 14px calc(16px * var(--density)) 32px;
+    font-size:calc(1.45rem * var(--density));}
+  .saldo{padding:calc(15px * var(--density)) 16px;}
+  .saldo .val{font-size:calc(1.55rem * var(--density));}
+  .check{padding:calc(16px * var(--density)) 18px;}
+  .mrow{padding:calc(13px * var(--density)) 10px;margin-bottom:calc(7px * var(--density));}
+  table.xls th,table.xls td{padding:calc(9px * var(--density)) calc(11px * var(--density));}
+  .card{margin-bottom:calc(18px * var(--density));}
+  .wrap{gap:calc(18px * var(--density));}
+  .card-head{padding:calc(15px * var(--density)) 18px;}
+  .fields{padding:calc(16px * var(--density)) 18px calc(18px * var(--density));}
+
+</style>
+</head>
+<body>
+  
+    <!-- ====================== SCHERMATA LOGIN ====================== -->
+  <div id="screen-login">
+    <div class="login-wrap">
+      <img class="login-logo" src="data:image/jpeg;base64,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" alt="Noi e i Capelli">
+      <h2 class="login-title">Accesso</h2>
+      <div class="login-card">
+        <label class="login-lbl">Password</label>
+        <div class="login-field">
+          <input type="password" id="login-pwd" class="login-input" 
+                 placeholder="••••••••" autocomplete="current-password">
+          <button class="login-eye" id="login-eye" type="button">👁</button>
+        </div>
+        <button class="login-btn" id="loginBtn">Entra</button>
+        <p class="login-err hidden" id="login-err">Password errata — riprova</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== MODAL CAMBIO PASSWORD ====================== -->
+  <div class="sheet hidden" id="sheet-pwd">
+    <div class="sheet-card">
+      <div class="sheet-grab"></div>
+      <div class="sheet-head">
+        <div class="t">Cambia password</div>
+        <button class="sheet-close" id="closePwd">Chiudi</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="login-lbl">Password attuale</label>
+          <input type="password" id="pwd-old" class="login-input" placeholder="••••••••">
+        </div>
+        <div>
+          <label class="login-lbl">Nuova password</label>
+          <input type="password" id="pwd-new" class="login-input" placeholder="••••••••">
+        </div>
+        <div>
+          <label class="login-lbl">Ripeti nuova password</label>
+          <input type="password" id="pwd-new2" class="login-input" placeholder="••••••••">
+        </div>
+        <button class="login-btn" id="savePwdBtn">Salva nuova password</button>
+        <p class="login-err hidden" id="pwd-err">—</p>
+        <p class="login-ok hidden" id="pwd-ok">✓ Password aggiornata!</p>
+      </div>
+    </div>
+  </div>
+
+<div class="top">
+    <div class="top-r2">
+      <div class="top-tabs">
+        <button class="tab active" data-view="oggi">Oggi</button>
+        <button class="tab" data-view="mese">Mese</button>
+        <button class="tab" data-view="tabella">Tabella</button>
+      </div>
+      <div class="zoom">
+        <button class="zbtn" data-s="80">A</button>
+        <button class="zbtn" data-s="95">A+</button>
+        <button class="zbtn active" data-s="115">A++</button>
+      </div>
+      <button class="key-pwd" id="btnCambiaPwd" title="Impostazioni password">🔑</button>
+    </div>
+  </div>
+
+
+  <!-- ====================== VISTA OGGI ====================== -->
+  <div id="view-oggi">
+    <div class="datebar">
+      <label for="data">Giorno</label>
+      <input type="date" id="data">
+    </div>
+    <div class="wrap">
+      <div class="card tot">
+        <div class="card-head"><div class="name"><span class="dot"></span> Totale</div><span class="badge">incasso lordo</span></div>
+        <div class="fields">
+          <div class="row"><label>Incasso totale</label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="tot_inc" placeholder="0"></div></div>
+          <div class="row"><label>Spesa</label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="tot_sp" placeholder="0"></div></div>
+          <div class="saldo"><span class="lbl">Saldo progressivo</span><span class="val" id="s_tot">€ 0</span></div>
+        </div>
+      </div>
+      <div class="card fis">
+        <div class="card-head"><div class="name"><span class="dot"></span> Fiscale</div><span class="badge">scontrino</span></div>
+        <div class="fields">
+          <div class="row"><label>Incasso fiscale</label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="fis_inc" placeholder="0"></div></div>
+          <div class="row"><label>POS <span class="hint">pagamenti con carta</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="fis_pos" placeholder="0"></div></div>
+          <div class="row"><label>Altra voce <span class="opt">facolt.</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="fis_alt" placeholder="0"></div></div>
+          <div class="saldo"><span class="lbl">Contante in cassa</span><span class="val" id="s_fis">€ 0</span></div>
+        </div>
+      </div>
+      <div class="card dif">
+        <div class="card-head"><div class="name"><span class="dot"></span> Diff</div><span class="badge">accantonato</span></div>
+        <div class="fields">
+          <div class="row"><label>Incasso diff <span class="hint" id="diff_sugg">suggerito: Totale − Fiscale</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="dif_inc" placeholder="0"></div></div>
+          <div class="row"><label>Voce 1 <span class="opt">facolt.</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="dif_1" placeholder="0"></div></div>
+          <div class="row"><label>Voce 2 <span class="opt">facolt.</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="dif_2" placeholder="0"></div></div>
+          <div class="row"><label>Voce 3 <span class="opt">facolt.</span></label><div class="euro"><span>€</span><input type="number" inputmode="decimal" id="dif_3" placeholder="0"></div></div>
+          <div class="saldo"><span class="lbl">Saldo progressivo</span><span class="val" id="s_dif">€ 0</span></div>
+        </div>
+      </div>
+      <div class="check ok" id="quad">✓ Totale = Fiscale + Diff</div>
+    </div>
+    <div class="save">
+      <button id="btnSave">Salva giornata</button>
+    </div>
+  </div>
+
+  <!-- ====================== VISTA MESE ====================== -->
+  <div id="view-mese" class="hidden">
+    <div class="month-head">
+      <div class="nav"><button id="prevM">‹</button></div>
+      <div class="mname" id="mname">Maggio 2026</div>
+      <div class="nav"><button id="nextM">›</button></div>
+    </div>
+    <div class="mtable">
+      <div class="mt-headrow">
+        <div>Giorno</div>
+        <div class="c">Totale</div>
+        <div class="c">Fiscale</div>
+        <div class="c">Diff</div>
+      </div>
+      <div id="mrows"></div>
+      <div class="mt-tot">
+        <div class="day">TOT</div>
+        <div class="c" id="tt">—</div>
+        <div class="c" id="tf">—</div>
+        <div class="c" id="td">—</div>
+      </div>
+      <p class="tap-hint">Tocca un giorno per vedere il dettaglio</p>
+    </div>
+  </div>
+
+  <!-- ====================== VISTA TABELLA (Excel-like) ====================== -->
+  <div id="view-tabella" class="hidden">
+    <div class="month-head">
+      <div class="nav"><button id="prevT">‹</button></div>
+      <div class="mname" id="tname">Maggio 2026</div>
+      <div class="nav"><button id="nextT">›</button></div>
+    </div>
+    <p class="tab-scroll-hint">↔ Scorri in orizzontale per vedere tutte le colonne</p>
+    <div class="xls-scroll">
+      <table class="xls" id="xls">
+        <thead>
+          <tr class="grp">
+            <th class="sticky-col corner" rowspan="2">Giorno</th>
+            <th colspan="3" class="g-tot">Totale</th>
+            <th colspan="4" class="g-fis">Fiscale</th>
+            <th colspan="5" class="g-dif">Diff</th>
+          </tr>
+          <tr class="sub">
+            <th class="g-tot">Inc.</th><th class="g-tot">Spesa</th><th class="g-tot bld">Saldo</th>
+            <th class="g-fis">Inc.</th><th class="g-fis">POS</th><th class="g-fis">Altro</th><th class="g-fis bld">Cassa</th>
+            <th class="g-dif">Inc.</th><th class="g-dif">V1</th><th class="g-dif">V2</th><th class="g-dif">V3</th><th class="g-dif bld">Saldo</th>
+          </tr>
+        </thead>
+        <tbody id="xlsbody"></tbody>
+        <tfoot id="xlsfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ====================== DETTAGLIO GIORNO ====================== -->
+  <div class="sheet" id="sheet">
+    <div class="sheet-card">
+      <div class="sheet-grab"></div>
+      <div class="sheet-head">
+        <div class="t" id="det-title">Giovedì 8 maggio</div>
+        <button class="sheet-close" id="closeSheet">Chiudi</button>
+      </div>
+      <div class="det-sec t">
+        <h4><span class="dot" style="background:var(--tot)"></span> Totale</h4>
+        <div class="det-line"><span class="k">Incasso</span><span class="v" id="d-ti">—</span></div>
+        <div class="det-line"><span class="k">Spesa</span><span class="v" id="d-ts">—</span></div>
+        <div class="det-line saldo-line"><span class="k">Saldo progressivo</span><span class="v" id="d-tsaldo">—</span></div>
+      </div>
+      <div class="det-sec f">
+        <h4><span class="dot" style="background:var(--fis)"></span> Fiscale</h4>
+        <div class="det-line"><span class="k">Incasso</span><span class="v" id="d-fi">—</span></div>
+        <div class="det-line"><span class="k">POS</span><span class="v" id="d-fp">—</span></div>
+        <div class="det-line saldo-line"><span class="k">Contante in cassa</span><span class="v" id="d-fsaldo">—</span></div>
+      </div>
+      <div class="det-sec d">
+        <h4><span class="dot" style="background:var(--dif)"></span> Diff</h4>
+        <div class="det-line"><span class="k">Incasso</span><span class="v" id="d-di">—</span></div>
+        <div class="det-line"><span class="k">Voci</span><span class="v" id="d-dv">—</span></div>
+        <div class="det-line saldo-line"><span class="k">Saldo progressivo</span><span class="v" id="d-dsaldo">—</span></div>
+      </div>
+      <div class="det-edit"><button id="editDay">✎ Modifica questo giorno</button></div>
+    </div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const n = id => parseFloat($(id).value) || 0;
+  const eur = v => "€ " + Math.round(v).toLocaleString("it-IT");
+  const eur0 = v => (v !== null && v !== undefined && v !== 0) ? "€ " + Math.round(v).toLocaleString("it-IT") : "—";
+
+  // ══════════════════════════════════════════
+  //  CONFIGURAZIONE
+  // ══════════════════════════════════════════
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby50adAcWCXceBnzhrEL2z9ydxzsqIt36Ha3P8-ttMJi1wgMCOQCV6qyjx9-JrCyNBV/exec";
+  const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  const MESI_NUM = {1:31,2:28,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31};
+  const GIORNI_IT = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+
+  // Stato dell'app
+  let statoMese = {};        // cache dati: { "Giugno": { giorni:[], apertura:{} } }
+  let meseCorrente = null;   // "Giugno"
+  let annoCorrente = 2026;
+  let giornoInModifica = null;
+
+  // ══════════════════════════════════════════
+  //  DATA DEFAULT — mese corrente
+  // ══════════════════════════════════════════
+  const oggi = new Date();
+  $("data").valueAsDate = oggi;
+  meseCorrente = MESI[oggi.getMonth()];
+
+  // ══════════════════════════════════════════
+  //  ZOOM + DENSITY
+  // ══════════════════════════════════════════
+  document.querySelectorAll('.zbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.zbtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.documentElement.style.setProperty('--scale',b.dataset.s+'%');
+    const dm={'80':'0.65','95':'0.82','115':'1'};
+    document.documentElement.style.setProperty('--density',dm[b.dataset.s]||'1');
+  }));
+
+  // ══════════════════════════════════════════
+  //  SWITCH VISTE
+  // ══════════════════════════════════════════
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const v=t.dataset.view;
+    ['oggi','mese','tabella'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
+    if(v==='mese') caricaEMostraMese(meseCorrente);
+    if(v==='tabella') caricaEMostraTabella(meseCorrente);
+  }));
+
+  // ══════════════════════════════════════════
+  //  NAVIGAZIONE MESI
+  // ══════════════════════════════════════════
+  function meseIndex(nome){ return MESI.indexOf(nome); }
+  function spostaM(delta,prefix){
+    let i = meseIndex(meseCorrente) + delta;
+    if(i<0) i=0; if(i>11) i=11;
+    meseCorrente = MESI[i];
+    if(prefix==='m') caricaEMostraMese(meseCorrente);
+    else caricaEMostraTabella(meseCorrente);
+  }
+  $("prevM").addEventListener('click',()=>spostaM(-1,'m'));
+  $("nextM").addEventListener('click',()=>spostaM(+1,'m'));
+  $("prevT").addEventListener('click',()=>spostaM(-1,'t'));
+  $("nextT").addEventListener('click',()=>spostaM(+1,'t'));
+
+  // ══════════════════════════════════════════
+  //  SISTEMA PASSWORD
+  // ══════════════════════════════════════════
+  const DEFAULT_PWD = "1234";
+  function getPwd(){ return localStorage.getItem("nc_pwd") || DEFAULT_PWD; }
+  function tryLogin(){
+    const v=$("login-pwd").value;
+    if(v===getPwd()){
+      $("screen-login").style.display="none";
+      $("login-pwd").value="";
+      $("login-err").classList.add("hidden");
+      avviaApp();
+    } else {
+      $("login-err").classList.remove("hidden");
+      $("login-pwd").value=""; $("login-pwd").focus();
+    }
+  }
+  $("loginBtn").addEventListener("click",tryLogin);
+  $("login-pwd").addEventListener("keydown",e=>{ if(e.key==="Enter") tryLogin(); });
+  $("login-eye").addEventListener("click",()=>{
+    const i=$("login-pwd"); i.type=i.type==="password"?"text":"password";
+  });
+  document.getElementById("savePwdBtn").addEventListener("click",()=>{
+    const old=$("pwd-old").value,n1=$("pwd-new").value,n2=$("pwd-new2").value;
+    const err=$("pwd-err"),ok=$("pwd-ok");
+    err.classList.add("hidden"); ok.classList.add("hidden");
+    if(old!==getPwd()){err.textContent="Password attuale non corretta";err.classList.remove("hidden");return;}
+    if(n1.length<4){err.textContent="Minimo 4 caratteri";err.classList.remove("hidden");return;}
+    if(n1!==n2){err.textContent="Le due password non coincidono";err.classList.remove("hidden");return;}
+    localStorage.setItem("nc_pwd",n1); ok.classList.remove("hidden");
+    $("pwd-old").value=""; $("pwd-new").value=""; $("pwd-new2").value="";
+    setTimeout(()=>{ $("sheet-pwd").classList.add("hidden"); ok.classList.add("hidden"); },1500);
+  });
+  document.getElementById("closePwd").addEventListener("click",()=>$("sheet-pwd").classList.add("hidden"));
+  document.getElementById("btnCambiaPwd").addEventListener("click",()=>{
+    $("pwd-old").value=""; $("pwd-new").value=""; $("pwd-new2").value="";
+    $("pwd-err").classList.add("hidden"); $("pwd-ok").classList.add("hidden");
+    $("sheet-pwd").classList.remove("hidden");
+  });
+
+  // ══════════════════════════════════════════
+  //  AVVIO APP dopo login
+  // ══════════════════════════════════════════
+  function avviaApp(){
+    meseCorrente = MESI[new Date().getMonth()];
+    $("data").valueAsDate = new Date();
+    aggiornaApertura();
+    calc();
+  }
+
+  // ══════════════════════════════════════════
+  //  CHIAMATA ALLO SCRIPT
+  // ══════════════════════════════════════════
+  async function chiamaScript(params){
+    const url = SCRIPT_URL + "?" + new URLSearchParams(params).toString();
+    const r = await fetch(url, {redirect:"follow"});
+    return await r.json();
+  }
+
+  // ══════════════════════════════════════════
+  //  CARICA DATI MESE (con cache)
+  // ══════════════════════════════════════════
+  async function caricaMese(mese){
+    if(statoMese[mese]) return statoMese[mese];
+    mostraCaricamento(true);
+    try {
+      const data = await chiamaScript({action:"getMese", mese:mese});
+      if(data.ok){ statoMese[mese] = data; }
+      return data;
+    } catch(e){ return {ok:false, errore:String(e)}; }
+    finally { mostraCaricamento(false); }
+  }
+
+  // Aggiorna i saldi dell'apertura nella vista Oggi (dal saldo dell'ultimo giorno salvato)
+  let APERTURA = {tot:0, fis:0, dif:0};
+  async function aggiornaApertura(){
+    const mese = MESI[new Date().getMonth()];
+    const data = await caricaMese(mese);
+    if(!data || !data.ok){ APERTURA={tot:0,fis:0,dif:0}; calc(); return; }
+    // Prendo l'ultimo saldo salvato
+    const giorni = data.giorni || [];
+    const ult = giorni.length > 0 ? giorni[giorni.length-1] : data.apertura;
+    APERTURA = {
+      tot: ult ? (ult.saldoTot||0) : 0,
+      fis: ult ? (ult.saldoFis||0) : 0,
+      dif: ult ? (ult.saldoDiff||0) : 0
+    };
+    calc();
+  }
+
+  // ══════════════════════════════════════════
+  //  CALCOLO SALDI IN TEMPO REALE (vista Oggi)
+  // ══════════════════════════════════════════
+  function calc(){
+    const totInc=n("tot_inc"),totSp=n("tot_sp");
+    const fisInc=n("fis_inc"),fisPos=n("fis_pos"),fisAlt=n("fis_alt");
+    const difInc=n("dif_inc"),d1=n("dif_1"),d2=n("dif_2"),d3=n("dif_3");
+    $("s_tot").textContent=eur(APERTURA.tot+totInc-totSp);
+    $("s_fis").textContent=eur(APERTURA.fis+fisInc-fisPos-fisAlt);
+    $("s_dif").textContent=eur(APERTURA.dif+difInc-d1-d2-d3);
+    const sugg=totInc-fisInc;
+    $("diff_sugg").textContent=(totInc||fisInc)?"suggerito: € "+Math.round(sugg).toLocaleString("it-IT"):"suggerito: Totale − Fiscale";
+    const q=$("quad");
+    if(totInc===0&&fisInc===0&&difInc===0){q.className="check ok";q.textContent="✓ Totale = Fiscale + Diff";}
+    else if(Math.abs(totInc-(fisInc+difInc))<0.5){q.className="check ok";q.textContent="✓ Quadra: "+eur(totInc)+" = "+eur(fisInc)+" + "+eur(difInc);}
+    else{q.className="check warn";q.textContent="⚠ Non quadra di "+eur(Math.abs(totInc-(fisInc+difInc)));}
+  }
+  document.querySelectorAll('#view-oggi input[type=number]').forEach(i=>i.addEventListener('input',calc));
+
+  // ══════════════════════════════════════════
+  //  SALVA GIORNATA
+  // ══════════════════════════════════════════
+  $("btnSave").addEventListener('click', async ()=>{
+    const dataVal = $("data").value;
+    if(!dataVal){ alert("Seleziona una data"); return; }
+    // Determino il mese dalla data selezionata
+    const dt = new Date(dataVal+"T12:00:00");
+    const mese = MESI[dt.getMonth()];
+    const btn = $("btnSave");
+    btn.textContent = "Salvataggio…"; btn.disabled = true;
+    try {
+      const payload = {
+        action:"salvaGiorno", mese:mese, data:dataVal,
+        incTotale:n("tot_inc")||"", spesaTot:n("tot_sp")||"",
+        incFiscale:n("fis_inc")||"", spFis1:n("fis_pos")||"",
+        spFis2:n("fis_alt")||"", spFis3:"",
+        incDiff:n("dif_inc")||"", spDiff1:n("dif_1")||"",
+        spDiff2:n("dif_2")||"", spDiff3:n("dif_3")||"", spDiff4:""
+      };
+      const r = await chiamaScript(payload);
+      if(r.ok){
+        // Invalido cache del mese
+        delete statoMese[mese];
+        btn.textContent = "✓ Salvato!";
+        btn.style.background = "var(--tot)";
+        // Svuoto campi
+        document.querySelectorAll('#view-oggi input[type=number]').forEach(i=>i.value="");
+        $("data").valueAsDate = new Date();
+        await aggiornaApertura();
+        setTimeout(()=>{ btn.textContent="Salva giornata"; btn.style.background=""; btn.disabled=false; },2000);
+      } else {
+        throw new Error(r.errore||"Errore sconosciuto");
+      }
+    } catch(e){
+      alert("Errore nel salvataggio: "+e.message);
+      btn.textContent="Salva giornata"; btn.disabled=false;
+    }
+  });
+
+  // ══════════════════════════════════════════
+  //  VISTA MESE
+  // ══════════════════════════════════════════
+  async function caricaEMostraMese(mese){
+    $("mname").textContent = mese + " " + annoCorrente;
+    const data = await caricaMese(mese);
+    if(!data||!data.ok){ $("mrows").innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">Nessun dato disponibile</div>'; return; }
+    renderMonth(data.giorni||[]);
+  }
+
+  function renderMonth(giorni){
+    let H="", TT=0, TF=0, TD=0;
+    if(giorni.length===0){
+      H='<div style="padding:20px;text-align:center;color:var(--muted)">Nessun dato inserito questo mese</div>';
+    }
+    for(const g of giorni){
+      const dt = g.data ? new Date(g.data+"T12:00:00") : null;
+      const giorno = dt ? dt.getDate() : "—";
+      const dow = dt ? GIORNI_IT[dt.getDay()] : "";
+      const vuoto = !g.incTotale && !g.incFiscale;
+      if(!vuoto){ TT+=g.incTotale||0; TF+=g.incFiscale||0; TD+=g.incDiff||0; }
+      H+=`<div class="mrow${vuoto?' empty':''}" data-data="${g.data||''}" data-riga="${g.riga}">
+        <div class="day">${giorno}<small>${dow}</small></div>
+        <div class="c t">${eur0(g.incTotale)}</div>
+        <div class="c f">${eur0(g.incFiscale)}</div>
+        <div class="c d">${eur0(g.incDiff)}</div>
+      </div>`;
+    }
+    $("mrows").innerHTML=H;
+    $("tt").textContent=eur(TT); $("tf").textContent=eur(TF); $("td").textContent=eur(TD);
+    document.querySelectorAll('.mrow').forEach(row=>row.addEventListener('click',()=>{
+      const dataStr=row.dataset.data;
+      const riga=parseInt(row.dataset.riga);
+      const g=giorni.find(x=>x.riga===riga);
+      if(g) openDay(g);
+    }));
+  }
+
+  // ══════════════════════════════════════════
+  //  VISTA TABELLA
+  // ══════════════════════════════════════════
+  async function caricaEMostraTabella(mese){
+    $("tname").textContent = mese + " " + annoCorrente;
+    const data = await caricaMese(mese);
+    if(!data||!data.ok){ $("xlsbody").innerHTML='<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--muted)">Nessun dato</td></tr>'; return; }
+    renderTable(data.giorni||[]);
+  }
+
+  function cell(v,cls){ const z=(!v)?' zero':''; return `<td class="${cls||''
+}${z}">${v?Math.round(v).toLocaleString("it-IT"):'·'}</td>`; }
+
+  function renderTable(giorni){
+    let H="";
+    let sTot=0,sFis=0,sDif=0;
+    let sumIT=0,sumST=0,sumFI=0,sumPOS=0,sumFA=0,sumDI=0,sumV1=0,sumV2=0,sumV3=0;
+    for(const g of giorni){
+      const dt=g.data?new Date(g.data+"T12:00:00"):null;
+      const giorno=dt?dt.getDate():"—";
+      const dow=dt?GIORNI_IT[dt.getDay()]:"";
+      const empty=!g.incTotale&&!g.incFiscale&&!g.incDiff;
+      sTot+=(g.incTotale||0)-(g.spesaTot||0);
+      sFis+=(g.incFiscale||0)-(g.spFis1||0)-(g.spFis2||0)-(g.spFis3||0);
+      sDif+=(g.incDiff||0)-(g.spDiff1||0)-(g.spDiff2||0)-(g.spDiff3||0)-(g.spDiff4||0);
+      sumIT+=g.incTotale||0; sumST+=g.spesaTot||0; sumFI+=g.incFiscale||0;
+      sumPOS+=g.spFis1||0; sumFA+=g.spFis2||0; sumDI+=g.incDiff||0;
+      sumV1+=g.spDiff1||0; sumV2+=g.spDiff2||0; sumV3+=g.spDiff3||0;
+      H+=`<tr class="${empty?'empty':''}" data-riga="${g.riga}">
+        <td class="sticky-col">${giorno}<small>${dow}</small></td>
+        ${cell(g.incTotale)}${cell(g.spesaTot)}<td class="s-tot">${Math.round(sTot).toLocaleString("it-IT")}</td>
+        ${cell(g.incFiscale)}${cell(g.spFis1)}${cell(g.spFis2)}<td class="s-fis">${Math.round(sFis).toLocaleString("it-IT")}</td>
+        ${cell(g.incDiff)}${cell(g.spDiff1)}${cell(g.spDiff2)}${cell(g.spDiff3)}<td class="s-dif">${Math.round(sDif).toLocaleString("it-IT")}</td>
+      </tr>`;
+    }
+    $("xlsbody").innerHTML=H;
+    $("xlsfoot").innerHTML=`<tr>
+      <td class="sticky-col">TOT</td>
+      <td>${Math.round(sumIT).toLocaleString("it-IT")}</td><td>${Math.round(sumST).toLocaleString("it-IT")}</td><td>${Math.round(sTot).toLocaleString("it-IT")}</td>
+      <td>${Math.round(sumFI).toLocaleString("it-IT")}</td><td>${Math.round(sumPOS).toLocaleString("it-IT")}</td><td>${Math.round(sumFA).toLocaleString("it-IT")}</td><td>${Math.round(sFis).toLocaleString("it-IT")}</td>
+      <td>${Math.round(sumDI).toLocaleString("it-IT")}</td><td>${Math.round(sumV1).toLocaleString("it-IT")}</td><td>${Math.round(sumV2).toLocaleString("it-IT")}</td><td>${Math.round(sumV3).toLocaleString("it-IT")}</td><td>${Math.round(sDif).toLocaleString("it-IT")}</td>
+    </tr>`;
+    document.querySelectorAll('#xlsbody tr').forEach(row=>row.addEventListener('click',()=>{
+      const riga=parseInt(row.dataset.riga);
+      const g=giorni.find(x=>x.riga===riga);
+      if(g) openDay(g);
+    }));
+  }
+
+  // ══════════════════════════════════════════
+  //  DETTAGLIO GIORNO
+  // ══════════════════════════════════════════
+  let giornoAperto = null;
+  function openDay(g){
+    giornoAperto = g;
+    const dt=g.data?new Date(g.data+"T12:00:00"):null;
+    const giorno=dt?dt.getDate():"—";
+    const mese=dt?MESI[dt.getMonth()]:"";
+    const dow=dt?['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'][dt.getDay()]:"";
+    $("det-title").textContent=`${dow} ${giorno} ${mese}`;
+    $("d-ti").textContent=eur0(g.incTotale); $("d-ts").textContent=eur0(g.spesaTot);
+    $("d-tsaldo").textContent=eur((g.incTotale||0)-(g.spesaTot||0));
+    $("d-fi").textContent=eur0(g.incFiscale); $("d-fp").textContent=eur0(g.spFis1);
+    $("d-fsaldo").textContent=eur((g.incFiscale||0)-(g.spFis1||0)-(g.spFis2||0));
+    $("d-di").textContent=eur0(g.incDiff);
+    const voci=(g.spDiff1||0)+(g.spDiff2||0)+(g.spDiff3||0);
+    $("d-dv").textContent=voci?eur(voci):"—";
+    $("d-dsaldo").textContent=eur((g.incDiff||0)-voci);
+    $("sheet").classList.add('open');
+  }
+  $("closeSheet").addEventListener('click',()=>$("sheet").classList.remove('open'));
+  $("sheet").addEventListener('click',e=>{if(e.target===$("sheet"))$("sheet").classList.remove('open');});
+  $("editDay").addEventListener('click',()=>{
+    $("sheet").classList.remove('open');
+    if(giornoAperto && giornoAperto.data){
+      $("data").value = giornoAperto.data;
+      $("tot_inc").value = giornoAperto.incTotale||"";
+      $("tot_sp").value  = giornoAperto.spesaTot||"";
+      $("fis_inc").value = giornoAperto.incFiscale||"";
+      $("fis_pos").value = giornoAperto.spFis1||"";
+      $("fis_alt").value = giornoAperto.spFis2||"";
+      $("dif_inc").value = giornoAperto.incDiff||"";
+      $("dif_1").value   = giornoAperto.spDiff1||"";
+      $("dif_2").value   = giornoAperto.spDiff2||"";
+      $("dif_3").value   = giornoAperto.spDiff3||"";
+      calc();
+    }
+    document.querySelector('.tab[data-view=oggi]').click();
+  });
+
+  // ══════════════════════════════════════════
+  //  SPINNER CARICAMENTO
+  // ══════════════════════════════════════════
+  function mostraCaricamento(show){
+    let s=$("spinner");
+    if(!s){ s=document.createElement("div"); s.id="spinner";
+      s.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);color:#fff;padding:20px 32px;border-radius:16px;font-size:1.1rem;z-index:999;display:none;";
+      s.textContent="Caricamento…"; document.body.appendChild(s); }
+    s.style.display=show?"block":"none";
+  }
+
+</script>
+</body>
+</html>  
+
