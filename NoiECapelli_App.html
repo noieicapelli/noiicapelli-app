@@ -600,7 +600,7 @@
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     const v=t.dataset.view;
-    ['oggi','mese','tabella'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
+    ['oggi','mese','tabella','report'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
     if(v==='mese') caricaEMostraMese(meseCorrente);
     if(v==='tabella') caricaEMostraTabella(meseCorrente);
     if(v==='report') caricaReport();
