@@ -720,6 +720,45 @@
   // ══════════════════════════════════════════
   //  CALCOLO SALDI IN TEMPO REALE (vista Oggi)
   // ══════════════════════════════════════════
+
+  // ══════════════════════════════════════════
+  //  CARICA DATI QUANDO CAMBIA LA DATA
+  // ══════════════════════════════════════════
+  $("data").addEventListener('change', async ()=>{
+    const dataVal = $("data").value;
+    if(!dataVal) return;
+    const dt = new Date(dataVal+"T12:00:00");
+    const mese = MESI[dt.getMonth()];
+    
+    // Carico i dati del mese (con cache)
+    const data = await caricaMese(mese);
+    if(!data || !data.ok) return;
+    
+    // Cerco se esiste già un giorno con questa data
+    const giorni = data.giorni || [];
+    const giorno = giorni.find(g => g.data === dataVal);
+    
+    if(giorno){
+      // Carico i valori nei campi
+      $("tot_inc").value = giorno.incTotale||"";
+      $("tot_sp").value  = giorno.spesaTot||"";
+      $("fis_inc").value = giorno.incFiscale||"";
+      $("fis_pos").value = giorno.spFis1||"";
+      $("fis_alt").value = giorno.spFis2||"";
+      $("dif_inc").value = giorno.incDiff||"";
+      $("dif_1").value   = giorno.spDiff1||"";
+      $("dif_2").value   = giorno.spDiff2||"";
+      $("dif_3").value   = giorno.spDiff3||"";
+      // Mostro un indicatore che ci sono dati esistenti
+      $("btnSave").textContent = "Aggiorna giornata";
+    } else {
+      // Giorno vuoto - svuoto i campi
+      document.querySelectorAll('#view-oggi input[type=number]').forEach(i=>i.value="");
+      $("btnSave").textContent = "Salva giornata";
+    }
+    calc();
+  });
+
   function calc(){
     const totInc=n("tot_inc"),totSp=n("tot_sp");
     const fisInc=n("fis_inc"),fisPos=n("fis_pos"),fisAlt=n("fis_alt");
@@ -761,12 +800,13 @@
         // Invalido cache del mese
         delete statoMese[mese];
         btn.textContent = "✓ Salvato!";
+        btn.dataset.originalText = "Salva giornata";
         btn.style.background = "var(--tot)";
         // Svuoto campi
         document.querySelectorAll('#view-oggi input[type=number]').forEach(i=>i.value="");
         $("data").valueAsDate = new Date();
         await aggiornaApertura();
-        setTimeout(()=>{ btn.textContent="Salva giornata"; btn.style.background=""; btn.disabled=false; },2000);
+        setTimeout(()=>{ btn.textContent="Salva giornata"; btn.style.background=""; btn.disabled=false; $("data").dispatchEvent(new Event("change")); },2000);
       } else {
         throw new Error(r.errore||"Errore sconosciuto");
       }
@@ -888,8 +928,8 @@
   $("sheet").addEventListener('click',e=>{if(e.target===$("sheet"))$("sheet").classList.remove('open');});
   $("editDay").addEventListener('click',()=>{
     $("sheet").classList.remove('open');
-    if(giornoAperto && giornoAperto.data){
-      $("data").value = giornoAperto.data;
+    if(giornoAperto){
+      if(giornoAperto.data) $("data").value = giornoAperto.data;
       $("tot_inc").value = giornoAperto.incTotale||"";
       $("tot_sp").value  = giornoAperto.spesaTot||"";
       $("fis_inc").value = giornoAperto.incFiscale||"";
