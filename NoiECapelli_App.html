@@ -432,6 +432,7 @@
         <button class="zbtn active" data-s="115">A++</button>
       </div>
       <button class="key-pwd" id="btnCambiaPwd" title="Impostazioni password">🔑</button>
+      <button class="key-pwd" id="btnAggiornaApp" title="Aggiorna app alla versione più recente">🔄</button>
     </div>
   </div>
 
@@ -667,6 +668,12 @@
     $("pwd-old").value=""; $("pwd-new").value=""; $("pwd-new2").value="";
     $("pwd-err").classList.add("hidden"); $("pwd-ok").classList.add("hidden");
     $("sheet-pwd").style.display="flex";
+  });
+
+  document.getElementById("btnAggiornaApp").addEventListener("click",()=>{
+    if(confirm("Aggiornare l'app alla versione più recente?\n(la pagina si ricaricherà)")){
+      location.reload(true);
+    }
   });
 
   // ══════════════════════════════════════════
