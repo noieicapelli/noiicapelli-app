@@ -296,7 +296,9 @@
   
   
   /* RIGA 2: tabs + zoom + chiave */
-  .top-r2{display:flex;align-items:center;padding:12px 8px;gap:6px;}
+  .top-r2{display:flex;align-items:center;padding:12px 8px;gap:6px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .top-r2::-webkit-scrollbar{display:none;}
   .top-tabs{
     display:flex;flex:1;align-items:center;gap:4px;
   }
