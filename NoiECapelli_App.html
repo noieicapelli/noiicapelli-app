@@ -424,6 +424,7 @@
         <button class="tab" data-view="mese">Mese</button>
         <button class="tab" data-view="tabella">Tabella</button>
         <button class="tab" data-view="report">Report</button>
+        <button class="tab" data-view="storico">Storico</button>
       </div>
       <div class="zoom">
         <button class="zbtn" data-s="80">A</button>
@@ -605,10 +606,11 @@
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     const v=t.dataset.view;
-    ['oggi','mese','tabella','report'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
+    ['oggi','mese','tabella','report','storico'].forEach(id=>$('view-'+id).classList.toggle('hidden',id!==v));
     if(v==='mese') caricaEMostraMese(meseCorrente);
     if(v==='tabella') caricaEMostraTabella(meseCorrente);
     if(v==='report') caricaReport();
+    if(v==='storico') caricaStorico();
   }));
 
   // ══════════════════════════════════════════
@@ -1037,6 +1039,139 @@
     $("report-content").innerHTML = kpi + graficoBarre + tabella;
   }
 
+  // ══════════════════════════════════════════
+  //  STORICO ANNUALE
+  // ══════════════════════════════════════════
+  const MESI_ABBR = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  let statoStorico = null;  // cache: { anni: [...] }
+
+  async function caricaStorico(){
+    const cont = $("storico-content");
+    cont.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 0;">Caricamento...</div>';
+    try {
+      const data = await chiamaScript({action:"getStorico"});
+      if(!data.ok) throw new Error(data.errore||"Errore");
+      statoStorico = data;
+      renderStorico(data);
+    } catch(e){
+      cont.innerHTML = `<div style="text-align:center;color:var(--danger);padding:40px 0;">Errore: ${e.message}</div>`;
+    }
+  }
+
+  function eurStor(v){
+    return (v!==null && v!==undefined && v!=='') ? "€ "+Math.round(v).toLocaleString("it-IT") : "—";
+  }
+
+  function renderStorico(data){
+    const anni = data.anni || [];
+    const cont = $("storico-content");
+
+    let html = `
+      <div style="display:flex;justify-content:center;margin-bottom:14px;">
+        <button id="addAnnoBtn" style="background:var(--ink);color:#fff;border:none;border-radius:11px;
+          padding:11px 18px;font-size:1rem;font-weight:700;cursor:pointer;">+ Aggiungi anno</button>
+      </div>`;
+
+    if(anni.length===0){
+      html += `<div style="text-align:center;color:var(--muted);padding:30px 0;">
+        Nessun dato ancora. Tocca "+ Aggiungi anno" per iniziare.</div>`;
+    }
+
+    // Anni in ordine decrescente (più recente in alto)
+    const anniOrd = anni.slice().sort((a,b)=>b.anno-a.anno);
+    anniOrd.forEach(a=>{
+      html += `
+        <div style="margin-bottom:24px;">
+          <h3 style="text-align:center;font-size:1.3rem;font-weight:800;margin:6px 0 10px;">${a.anno}</h3>
+          <table class="mese-table">
+            <thead><tr>
+              <th>Mese</th><th>Inc.</th><th>Inc.Fis.</th><th>Div.</th>
+            </tr></thead>
+            <tbody>`;
+      a.mesi.forEach(m=>{
+        html += `<tr>
+          <td>${MESI_ABBR[m.mese-1]}</td>
+          <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="inc">${eurStor(m.inc)}</td>
+          <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="incFis">${eurStor(m.incFis)}</td>
+          <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="div">${eurStor(m.div)}</td>
+        </tr>`;
+      });
+      html += `
+            </tbody>
+            <tfoot><tr>
+              <td>TOT</td>
+              <td>${eurStor(a.totali.inc)}</td>
+              <td>${eurStor(a.totali.incFis)}</td>
+              <td>${eurStor(a.totali.div)}</td>
+            </tr></tfoot>
+          </table>
+        </div>`;
+    });
+
+    cont.innerHTML = html;
+
+    // Click su "+ Aggiungi anno"
+    $("addAnnoBtn").addEventListener('click', aggiungiAnno);
+
+    // Click su una cella → modifica
+    cont.querySelectorAll('.stor-cell').forEach(cell=>{
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', ()=>modificaCellaStorico(cell));
+    });
+  }
+
+  async function modificaCellaStorico(cell){
+    const anno = parseInt(cell.dataset.anno,10);
+    const mese = parseInt(cell.dataset.mese,10);
+    const campo = cell.dataset.campo;
+    const nomeCampo = campo==='inc'?'Incasso':(campo==='incFis'?'Incasso Fiscale':'Dividendo');
+    // Valore attuale (estraggo i numeri dal testo "€ 1.234")
+    const attuale = cell.textContent.replace(/[^\d]/g,'');
+    const input = prompt(`${MESI_ABBR[mese-1]} ${anno} — ${nomeCampo}\n\nInserisci l'importo (vuoto = cancella):`, attuale);
+    if(input===null) return;  // annullato
+    const valore = input.trim();
+    // Validazione: deve essere un numero o vuoto
+    if(valore!=='' && isNaN(Number(valore))){
+      alert("Inserisci solo numeri (es. 5000).");
+      return;
+    }
+    cell.textContent = '...';
+    try {
+      const data = await chiamaScript({action:"salvaStorico", anno:anno, mese:mese, campo:campo, valore:valore});
+      if(!data.ok) throw new Error(data.errore||"Errore");
+      statoStorico = data.storico;
+      renderStorico(data.storico);
+    } catch(e){
+      alert("Errore nel salvataggio: "+e.message);
+      caricaStorico();
+    }
+  }
+
+  async function aggiungiAnno(){
+    const annoCorrente = new Date().getFullYear();
+    const input = prompt("Quale anno vuoi aggiungere?", String(annoCorrente));
+    if(input===null) return;
+    const anno = parseInt(input.trim(),10);
+    if(isNaN(anno) || anno<2000 || anno>2100){
+      alert("Inserisci un anno valido (es. 2026).");
+      return;
+    }
+    // Verifico se esiste già
+    if(statoStorico && statoStorico.anni && statoStorico.anni.some(a=>a.anno===anno)){
+      alert("L'anno "+anno+" è già presente.");
+      return;
+    }
+    // Creo l'anno salvando gennaio con inc vuoto (così la riga esiste)
+    try {
+      const data = await chiamaScript({action:"salvaStorico", anno:anno, mese:1, campo:"inc", valore:""});
+      if(!data.ok) throw new Error(data.errore||"Errore");
+      statoStorico = data.storico;
+      renderStorico(data.storico);
+    } catch(e){
+      alert("Errore: "+e.message);
+    }
+  }
+
 </script>
 
   <!-- ====================== VISTA REPORT ====================== -->
@@ -1045,6 +1180,16 @@
       <div class="mname" style="flex:1;text-align:center;">Report 2026</div>
     </div>
     <div id="report-content" style="padding:16px;">
+      <div style="text-align:center;color:var(--muted);padding:40px 0;">Caricamento...</div>
+    </div>
+  </div>
+
+  <div id="view-storico" class="hidden">
+    <div class="month-head">
+      <div class="mname" style="flex:1;text-align:center;">Storico annuale</div>
+    </div>
+    <p class="tab-scroll-hint">Tocca un valore per modificarlo • i totali si aggiornano da soli</p>
+    <div id="storico-content" style="padding:12px 14px;">
       <div style="text-align:center;color:var(--muted);padding:40px 0;">Caricamento...</div>
     </div>
   </div>
