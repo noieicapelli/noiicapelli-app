@@ -1062,6 +1062,13 @@
     return (v!==null && v!==undefined && v!=='') ? "€ "+Math.round(v).toLocaleString("it-IT") : "—";
   }
 
+  // Protegge il testo libero (Note) da caratteri che romperebbero l'HTML della tabella
+  function escHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
   function renderStorico(data){
     const anni = data.anni || [];
     const cont = $("storico-content");
@@ -1083,9 +1090,10 @@
       html += `
         <div style="margin-bottom:24px;">
           <h3 style="text-align:center;font-size:1.3rem;font-weight:800;margin:6px 0 10px;">${a.anno}</h3>
-          <table class="mese-table">
+          <div class="xls-scroll">
+          <table class="mese-table" style="min-width:540px;">
             <thead><tr>
-              <th>Mese</th><th>Inc.</th><th>Inc.Fis.</th><th>Div.</th>
+              <th>Mese</th><th>Inc.</th><th>Inc.Fis.</th><th>Div.</th><th>Div.2</th><th>Note</th>
             </tr></thead>
             <tbody>`;
       a.mesi.forEach(m=>{
@@ -1094,6 +1102,8 @@
           <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="inc">${eurStor(m.inc)}</td>
           <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="incFis">${eurStor(m.incFis)}</td>
           <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="div">${eurStor(m.div)}</td>
+          <td class="stor-cell" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="div2">${eurStor(m.div2)}</td>
+          <td class="stor-cell stor-note" data-anno="${a.anno}" data-mese="${m.mese}" data-campo="note">${m.note ? escHtml(m.note) : '—'}</td>
         </tr>`;
       });
       html += `
@@ -1103,8 +1113,11 @@
               <td>${eurStor(a.totali.inc)}</td>
               <td>${eurStor(a.totali.incFis)}</td>
               <td>${eurStor(a.totali.div)}</td>
+              <td>—</td>
+              <td>—</td>
             </tr></tfoot>
           </table>
+          </div>
         </div>`;
     });
 
@@ -1124,17 +1137,31 @@
     const anno = parseInt(cell.dataset.anno,10);
     const mese = parseInt(cell.dataset.mese,10);
     const campo = cell.dataset.campo;
-    const nomeCampo = campo==='inc'?'Incasso':(campo==='incFis'?'Incasso Fiscale':'Dividendo');
-    // Valore attuale (estraggo i numeri dal testo "€ 1.234")
-    const attuale = cell.textContent.replace(/[^\d]/g,'');
-    const input = prompt(`${MESI_ABBR[mese-1]} ${anno} — ${nomeCampo}\n\nInserisci l'importo (vuoto = cancella):`, attuale);
+    const nomeCampo = campo==='inc'?'Incasso':(campo==='incFis'?'Incasso Fiscale':(campo==='div'?'Dividendo':(campo==='div2'?'Dividendo 2':'Note')));
+    
+    let attuale = '';
+    let inputMsg = '';
+    
+    if(campo==='note'){
+      // Campo testo libero
+      attuale = cell.textContent.replace(/^—$/,'');  // Se c'è "—", parti da vuoto
+      inputMsg = `${MESI_ABBR[mese-1]} ${anno} — ${nomeCampo}\n\nScrivi una nota (vuoto = cancella):`;
+    } else {
+      // Campi numerici
+      attuale = cell.textContent.replace(/[^\d]/g,'');  // Estrai solo i numeri
+      inputMsg = `${MESI_ABBR[mese-1]} ${anno} — ${nomeCampo}\n\nInserisci l'importo (vuoto = cancella):`;
+    }
+    
+    const input = prompt(inputMsg, attuale);
     if(input===null) return;  // annullato
     const valore = input.trim();
-    // Validazione: deve essere un numero o vuoto
-    if(valore!=='' && isNaN(Number(valore))){
+    
+    // Validazione: numeri per inc/incFis/div/div2, testo libero per note
+    if(campo!=='note' && valore!=='' && isNaN(Number(valore))){
       alert("Inserisci solo numeri (es. 5000).");
       return;
     }
+    
     cell.textContent = '...';
     try {
       const data = await chiamaScript({action:"salvaStorico", anno:anno, mese:mese, campo:campo, valore:valore});
