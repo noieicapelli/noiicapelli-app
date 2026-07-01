@@ -144,6 +144,16 @@
   tfoot td{background:var(--ink);color:#fff;font-weight:800;border-bottom:none;
     border-right:1px solid rgba(255,255,255,.12);}
   tfoot td.sticky-col{background:#000;text-align:left;position:sticky;left:0;z-index:5;}
+  /* riga note libere sotto TOTALI */
+  tr.note-row td{background:#fbf9f4;border-bottom:2px solid var(--line);padding:6px;}
+  tr.note-row td.sticky-col{background:#fbf9f4;font-weight:700;color:var(--muted);
+    font-size:.82rem;text-align:left;}
+  .note-input{width:100%;min-width:64px;border:2px solid var(--line);border-radius:8px;
+    padding:8px 7px;font-size:.92rem;font-family:inherit;background:#fff;color:var(--ink);
+    font-weight:600;text-align:right;box-sizing:border-box;}
+  .note-input:focus{outline:2px solid var(--ink);border-color:var(--ink);}
+  .note-saved{border-color:var(--tot) !important;}
+  .note-error{border-color:var(--danger) !important;background:#fbecea !important;}
   /* ============ DETTAGLIO (modal) ============ */
   .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:none;
     align-items:flex-end;}
@@ -870,6 +880,66 @@
   }
 
   // ══════════════════════════════════════════
+  //  NOTE LIBERE — riga sotto i TOTALI nella vista Tabella
+  // ══════════════════════════════════════════
+  let statoNoteTab = {};  // cache: { "Giugno": {incTotale:"", spesaTot:"", ...} }
+
+  // Protegge il testo libero da caratteri che romperebbero l'attributo HTML value="..."
+  function escAttr(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  async function caricaNoteTabella(mese){
+    if(statoNoteTab[mese]) return statoNoteTab[mese];
+    try{
+      const data = await chiamaScript({action:"getNoteTabella", mese:mese});
+      if(data.ok){ statoNoteTab[mese] = data.note; return data.note; }
+    }catch(e){}
+    return {};
+  }
+
+  function renderNoteRow(note){
+    const campi = ["incTotale","spesaTot","saldoTot","incFiscale","spFis1","spFis2","saldoFis","incDiff","spDiff1","spDiff2","spDiff3","saldoDiff"];
+    let H = `<tr class="note-row"><td class="sticky-col">Note</td>`;
+    campi.forEach(c=>{
+      const v = (note && note[c]) ? note[c] : "";
+      H += `<td><input class="note-input" data-campo="${c}" value="${escAttr(v)}"></td>`;
+    });
+    H += `</tr>`;
+    return H;
+  }
+
+  function attivaSalvataggioNote(mese){
+    document.querySelectorAll('.note-input').forEach(inp=>{
+      // Memorizzo il valore iniziale per salvare solo se cambia davvero
+      inp.dataset.originale = inp.value;
+      inp.addEventListener('blur', async ()=>{
+        const campo = inp.dataset.campo;
+        const valore = inp.value.trim();
+        // Salto il salvataggio se il valore non è cambiato (evita chiamate inutili)
+        if(valore === (inp.dataset.originale || '').trim()) return;
+        try{
+          const r = await chiamaScript({action:"salvaNoteTabella", mese:mese, campo:campo, valore:valore});
+          if(r.ok){
+            statoNoteTab[mese] = r.note;
+            inp.dataset.originale = valore;   // aggiorno il riferimento
+            inp.classList.remove('note-error');
+            inp.classList.add('note-saved');
+            setTimeout(()=>inp.classList.remove('note-saved'),1200);
+          } else {
+            throw new Error(r.errore || 'Errore');
+          }
+        }catch(e){
+          // Salvataggio fallito: segnalo in rosso così Pasquino se ne accorge
+          inp.classList.add('note-error');
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════
   //  VISTA TABELLA
   // ══════════════════════════════════════════
   async function caricaEMostraTabella(mese){
@@ -877,6 +947,9 @@
     const data = await caricaMese(mese);
     if(!data||!data.ok){ $("xlsbody").innerHTML='<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--muted)">Nessun dato</td></tr>'; return; }
     renderTable(data.giorni||[]);
+    const note = await caricaNoteTabella(mese);
+    $("xlsfoot").insertAdjacentHTML('beforeend', renderNoteRow(note));
+    attivaSalvataggioNote(mese);
   }
 
   function cell(v,cls){ const z=(!v)?' zero':''; return `<td class="${cls||''
