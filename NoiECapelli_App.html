@@ -674,7 +674,11 @@
 
   document.getElementById("btnAggiornaApp").addEventListener("click",()=>{
     if(confirm("Aggiornare l'app alla versione più recente?\n(la pagina si ricaricherà)")){
-      location.reload(true);
+      // location.reload(true) è deprecato e ignorato dai browser moderni (incl. Safari iOS):
+      // non forza il bypass della cache. Uso invece un parametro di cache-busting nell'URL,
+      // così il browser tratta la richiesta come una risorsa nuova.
+      const url = location.pathname + "?v=" + Date.now();
+      location.replace(url);
     }
   });
 
